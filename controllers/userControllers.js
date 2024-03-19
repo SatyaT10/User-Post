@@ -2,7 +2,7 @@ const User = require('../model/userModel');
 const bcrypt = require('bcrypt');
 const Post = require('../model/postModel');
 const jwt = require('jsonwebtoken');
-const config=require('../config/config')
+const config = require('../config/config')
 // Convert a password to secure Password
 const securePassword = async (password) => {
     try {
@@ -13,7 +13,6 @@ const securePassword = async (password) => {
         console.log(error.message);
     }
 }
-
 
 const createToken = async (data) => {
     try {
@@ -89,7 +88,9 @@ const loginUser = async (req, res) => {
 
 const createPost = async (req, res) => {
     try {
-        const userData = req.user.userData;
+        console.log('Satya');
+        console.log(req.user);
+        const userData = req.user;
         const reqBody = req.body;
         const { Title, Body, latitude, longitude } = reqBody;
 
@@ -122,17 +123,17 @@ const createPost = async (req, res) => {
 
 const updatePost = async (req, res) => {
     try {
-        const userData = req.user.userData;
+        const userData = req.user;
         const reqBody = req.body;
-        const { Title, Body } = reqBody;
-        if (!Title || !Body)
+        const { Title, Body, postId } = reqBody;
+        if (!Title || !Body || !postId)
             return res.status(400).json({ success: false, message: "Please provide a Post!" });
 
         const validUser = await User.findOne({ email: userData.email });
         if (validUser) {
-            const isPost = await Post.findOne({ Created_By: userData._id });
+            const isPost = await Post.findOne({ _id: postId });
             if (isPost) {
-                await Post.findOneAndUpdate({ Created_By: userData._id }, { $set: { Title: Title, Body: Body } });
+                await Post.findOneAndUpdate({ _id: postId }, { $set: { Title: Title, Body: Body } });
                 res.status(200).json({ success: true, message: 'Post updated successfully!' });
             } else {
                 res.status(400).json({ success: false, message: "Post isn't avilible!" });
@@ -148,7 +149,8 @@ const updatePost = async (req, res) => {
 // View all posts
 const viewPosts = async (req, res) => {
     try {
-        const userData = req.user.userData;
+        const userData = req.user;
+        const postId = req.body.postId;
         const validUser = await User.findOne({ email: userData.email });
         if (validUser) {
             let posts = await Post.find({ Created_By: validUser._id });
@@ -166,12 +168,13 @@ const viewPosts = async (req, res) => {
 // Delete Post
 const deletePosts = async (req, res) => {
     try {
-        const userData = req.user.userData;
+        const userData = req.user;
+        const postId = req.body.postId;
         const validUser = await User.findOne({ email: userData.email });
         if (validUser) {
             const isPost = await Post.findOne({ Created_By: validUser._id });
             if (isPost) {
-                await findOneAndDelete({ Created_By: validUser._id });
+                await Post.findOneAndDelete({ _id: postId });
                 res.status(200).json({ success: true, message: "Post  Deleted Successfully!" });
             } else {
                 res.status(400).json({ success: false, message: "You don't have any post" });
